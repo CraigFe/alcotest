@@ -27,7 +27,7 @@
 
     {e Release %%VERSION%%} *)
 
-include Alcotest_engine.Cli.S with type return = unit
+include Alcotest_engine.Cli.V1.S with type return = unit
 
 (** {1 Assert functions} *)
 
@@ -46,10 +46,10 @@ module Unix : Platform.MAKER
 
 (** {!Core.Make} is [Alcotest_engine.Core.Make (Unix)] *)
 module Core : sig
-  module Make : module type of Alcotest_engine.Core.Make (Unix)
+  module Make : module type of Alcotest_engine.Core.V1.Make (Unix)
 end
 
 (** {!Cli.Make} is [Alcotest_engine.Cli.Make (Unix)] *)
 module Cli : sig
-  module Make : module type of Alcotest_engine.Cli.Make (Unix)
+  module Make : module type of Alcotest_engine.Cli.V1.Make (Unix)
 end

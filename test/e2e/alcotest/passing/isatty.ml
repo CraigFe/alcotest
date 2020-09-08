@@ -8,7 +8,7 @@ module Platform (M : Alcotest_engine.Monad.S) = struct
 end
 
 module Alcotest =
-  Alcotest_engine.Core.Make (Platform) (Alcotest_engine.Monad.Identity)
+  Alcotest_engine.Core.V1.Make (Platform) (Alcotest_engine.Monad.Identity)
 
 let () =
   let open Alcotest in

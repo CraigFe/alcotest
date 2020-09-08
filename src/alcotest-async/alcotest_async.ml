@@ -3,7 +3,7 @@ open Async_kernel
 open Async_unix
 
 module Tester =
-  Alcotest_engine.Cli.Make
+  Alcotest_engine.Cli.V1.Make
     (Alcotest.Unix)
     (struct
       include Deferred
