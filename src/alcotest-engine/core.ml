@@ -28,7 +28,6 @@ module V1 = struct
     S with type return = unit M.t = struct
     module P = P (M)
     module M = Monad.Extend (M)
-    module Suite = Suite (M)
     include M.Infix
 
     (** Take a string path and collapse a leading [$HOME] path segment to [~]. *)
@@ -64,7 +63,7 @@ module V1 = struct
     (* global state *)
     type 'a t = {
       (* library values. *)
-      suite : 'a Suite.t;
+      suite : ('a, M.br) Model.Test.t;
       (* runtime state. *)
       mutable errors : unit Fmt.t list;
       (* runtime options. *)
@@ -80,16 +79,8 @@ module V1 = struct
       run_id : string;
     }
 
-    let empty ~suite_name =
+    let empty ~suite_name ~suite =
       let errors = [] in
-      let suite =
-        match Suite.v ~name:suite_name with
-        | Ok s -> s
-        | Error `Empty_name ->
-            Pp.user_error
-              "Suite name cannot cannot be empty. Please pass a non-empty \
-               string to `run`."
-      in
       let max_label = 0 in
       let verbose = false in
       let compact = false in
@@ -415,7 +406,7 @@ module V1 = struct
     let run_with_args ?(and_exit = true) ?(verbose = false) ?(compact = false)
         ?(tail_errors = `Unlimited) ?(quick_only = false) ?(show_errors = false)
         ?(json = false) ?filter ?(log_dir = default_log_dir ()) name (type a)
-        (args : a) (tl : a test list) =
+        (args : a) suite =
       let speed_level = if quick_only then `Quick else `Slow in
       let random_state = Random.State.make_self_init () in
       let run_id =
@@ -423,7 +414,7 @@ module V1 = struct
       in
       let t =
         {
-          (empty ~suite_name:name) with
+          (empty ~suite_name:name ~suite) with
           run_id;
           verbose;
           compact;
@@ -434,7 +425,6 @@ module V1 = struct
           log_dir;
         }
       in
-      let t = register_all t tl in
       ( (* Only print inside the concurrency monad *)
         M.return () >>= fun () ->
         let open Fmt in

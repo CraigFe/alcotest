@@ -1,3 +1,5 @@
+open Higher
+
 type speed_level = [ `Quick | `Slow ]
 
 module Test_name : sig
@@ -34,31 +36,50 @@ module Run_result : sig
   (** [is_failure] holds for test results that are error states. *)
 end
 
-module Suite (M : Monad.S) : sig
-  type 'a t
+module Test : sig
+  (** The set of operations available to the user for constructing test suites. *)
+  module Dsl : sig
+    type ('a, 'm) t
 
-  type 'a test_case = {
-    name : Test_name.t;
-    speed_level : speed_level;
-    fn : 'a -> Run_result.t M.t;
-  }
+    val v : name:string -> ('a -> (unit, 'm) app) -> ('a, 'm) t
 
-  val v : name:string -> (_ t, [> `Empty_name ]) result
-  (** Construct a new suite, given a non-empty [name]. Test cases must be added
-      with {!add}. *)
+    val group : name:string -> ('a, 'm) t list -> ('a, 'm) t
+  end
 
-  val name : _ t -> string
-  (** An escaped form of the suite name. *)
+  type ('a, 'm) t
 
-  val pp_name : _ t Fmt.t
-  (** Pretty-print the unescaped suite name. *)
+  val compile :
+    ('a, 'm) Dsl.t ->
+    (('a, 'm) t, [> `Duplicate_test_path of string | `Empty ]) result
+  (** Copmile the user DSL to an intermediate form to use for executing the
+      tests, rejecting any invalid states. *)
 
-  val add :
-    'a t ->
-    Test_name.t * string * speed_level * ('a -> Run_result.t M.t) ->
-    ('a t, [ `Duplicate_test_path of string ]) result
-
-  val tests : 'a t -> 'a test_case list
-
-  val doc_of_test_name : 'a t -> Test_name.t -> string
+  val fold :
+    (module Monad.S with type br = 'm) ->
+    ('a, 'm) t ->
+    'acc ->
+    ('acc -> path:string list -> run:('a -> (unit, 'm) app) -> 'acc) ->
+    ('acc, 'm) app
+  (** Depth-first, left-to-right monadic traversal. *)
 end
+
+(* module Suite : sig
+ *   type ('a, 'm) t
+ * 
+ *   val v : name:string -> (_ t, [> `Empty_name ]) result
+ *   (\** Construct a new suite, given a non-empty [name]. Test cases must be added
+ *       with {!add}. *\)
+ * 
+ *   val name : _ t -> string
+ *   (\** An escaped form of the suite name. *\)
+ * 
+ *   val pp_name : _ t Fmt.t
+ *   (\** Pretty-print the unescaped suite name. *\)
+ * 
+ *   val add :
+ *     'a t -> 'a Test.t -> ('a t, [ `Duplicate_test_path of string ]) result
+ * 
+ *   val tests : 'a t -> 'a test_case list
+ * 
+ *   val doc_of_test_name : 'a t -> Test_name.t -> string
+ * end *)

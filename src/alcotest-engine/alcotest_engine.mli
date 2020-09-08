@@ -45,6 +45,8 @@ module Monad = Monad
 module Platform = Platform
 (** Defines platform-dependent functions. *)
 
+module Higher = Higher
+
 (** These modules are exposed for use internally by other Alcotest packages.
     They do not provide a stable interface. *)
 module Private : sig

@@ -14,7 +14,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
 
-module Tester = Alcotest_engine.Cli.V1.Make (Alcotest.Unix) (Lwt)
+module Monad = struct
+  include Lwt
+
+  include Alcotest_engine.Higher.Make (struct
+    type nonrec 'a t = 'a t
+  end)
+end
+
+module Tester = Alcotest_engine.Cli.V1.Make (Alcotest.Unix) (Monad)
 include Tester
 
 let test_case_sync n s f = test_case n s (fun x -> Lwt.return (f x))

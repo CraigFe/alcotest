@@ -8,6 +8,10 @@ module Tester =
     (struct
       include Deferred
 
+      include Alcotest_engine.Higher.Make (struct
+        type nonrec 'a t = 'a t
+      end)
+
       let bind x f = bind x ~f
 
       let catch t on_error =

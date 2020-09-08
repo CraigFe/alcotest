@@ -4,6 +4,24 @@ module IntSet = Set.Make (struct
   let compare : int -> int -> int = compare
 end)
 
+module V2 = struct
+  module type S = sig
+    type 'a m
+
+    module Test : sig
+      type 'a t
+
+      val v : name:string -> ('a -> unit m) -> 'a t
+
+      val group : name:string -> 'a t list -> 'a t
+    end
+
+    val run : unit Test.t -> unit m
+
+    val run_with_args : 'a -> 'a Test.t -> unit m
+  end
+end
+
 module V1 = struct
   module type S = sig
     type return
@@ -79,9 +97,7 @@ module type Core = sig
   module V1 : sig
     module IntSet = IntSet
 
-    module type S = V1.S
-
-    module type MAKER = V1.MAKER
+    include module type of V1 (* @@inline *)
 
     module Make : V1.MAKER
     (** Functor for building a tester that sequences tests of type

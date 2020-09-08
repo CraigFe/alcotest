@@ -1,3 +1,4 @@
+open Higher
 open Utils
 
 type speed_level = [ `Quick | `Slow ]
@@ -25,7 +26,7 @@ let escape str =
   Buffer.contents buf
 
 module Test_name = struct
-  type t = { name : string; file : string; index : int }
+  type t = { name : string; file : string }
 
   let index { index; _ } = index
 
@@ -63,55 +64,74 @@ module Run_result = struct
     | `Error _ | `Exn _ | `Todo _ -> true
 end
 
-module Suite (M : Monad.S) = struct
+module Test = struct
+  type ('a, 'm) t =
+    | Test of { name : string; run : 'a -> (unit, 'm) app }
+    | Group of { name : string; children : ('a, 'm) t list }
+  module Dsl = struct
+    type ('a, 'm) dsl = ('a, 'm) t
+
+    let test ~name run = Test { name; run }
+
+    let group ~name children = Group { name; children }
+  end
+
   module String_set = Set.Make (String)
 
-  type 'a test_case = {
-    name : Test_name.t;
-    speed_level : speed_level;
-    fn : 'a -> Run_result.t M.t;
-  }
-
-  type 'a t = {
-    escaped_name : string;
-    pp_name : unit Fmt.t;
-    tests : 'a test_case list;
-    (* caches computed from the library values. *)
-    filepaths : String_set.t;
-    doc : (Test_name.t, string) Hashtbl.t;
-  }
-
-  let v ~name =
-    match String.length name with
-    | 0 -> Error `Empty_name
+  let compile t = match t with
+    | Group { children = []; _ } -> Error `Empty
     | _ ->
-        let escaped_name = escape name in
-        let pp_name = Fmt.(const string) name in
-        let tests = [] in
-        let filepaths = String_set.empty in
-        let doc = Hashtbl.create 0 in
-        Ok { escaped_name; pp_name; tests; filepaths; doc }
+      let paths = String_set.empty in
+      let rec inner path = function
+        | Test { name; _ } -> Test_name.file name
+        | 
 
-  let name { escaped_name; _ } = escaped_name
+      in
+      inner []
 
-  let pp_name ppf { pp_name; _ } = pp_name ppf ()
-
-  let check_path_is_unique t tname =
-    match String_set.mem (Test_name.file tname) t.filepaths with
-    | false -> Ok ()
-    | true -> Error (`Duplicate_test_path (Fmt.to_to_string Test_name.pp tname))
-
-  let add t (tname, doc, speed_level, fn) =
-    match check_path_is_unique t tname with
-    | Error _ as e -> e
-    | Ok () ->
-        let tests = { name = tname; speed_level; fn } :: t.tests in
-        let filepaths = String_set.add (Test_name.file tname) t.filepaths in
-        Hashtbl.add t.doc tname doc;
-        Ok { t with tests; filepaths }
-
-  let tests t = List.rev t.tests
-
-  let doc_of_test_name t path =
-    try Hashtbl.find t.doc path with Not_found -> ""
 end
+
+(* module Suite (M : Monad.S) = struct
+ *   module String_set = Set.Make (String)
+ * 
+ *   type ('a, 'm) t = {
+ *     test : ('a, 'm) Test.t;
+ *     (\* caches computed from the library values. *\)
+ *     filepaths : String_set.t;
+ *     doc : (Test_name.t, string) Hashtbl.t;
+ *   }
+ * 
+ *   let v ~name =
+ *     match String.length name with
+ *     | 0 -> Error `Empty_name
+ *     | _ ->
+ *         let escaped_name = escape name in
+ *         let pp_name = Fmt.(const string) name in
+ *         let tests = [] in
+ *         let filepaths = String_set.empty in
+ *         let doc = Hashtbl.create 0 in
+ *         Ok { escaped_name; pp_name; tests; filepaths; doc }
+ * 
+ *   let name { escaped_name; _ } = escaped_name
+ * 
+ *   let pp_name ppf { pp_name; _ } = pp_name ppf ()
+ * 
+ *   let check_path_is_unique t tname =
+ *     match String_set.mem (Test_name.file tname) t.filepaths with
+ *     | false -> Ok ()
+ *     | true -> Error (`Duplicate_test_path (Fmt.to_to_string Test_name.pp tname))
+ * 
+ *   let add t (tname, doc, speed_level, fn) =
+ *     match check_path_is_unique t tname with
+ *     | Error _ as e -> e
+ *     | Ok () ->
+ *         let tests = { name = tname; speed_level; fn } :: t.tests in
+ *         let filepaths = String_set.add (Test_name.file tname) t.filepaths in
+ *         Hashtbl.add t.doc tname doc;
+ *         Ok { t with tests; filepaths }
+ * 
+ *   let tests t = List.rev t.tests
+ * 
+ *   let doc_of_test_name t path =
+ *     try Hashtbl.find t.doc path with Not_found -> ""
+ * end *)
