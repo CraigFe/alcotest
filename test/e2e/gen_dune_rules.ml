@@ -43,7 +43,7 @@ let global_stanza ~libraries filenames =
  (names
    %a
  )
- (libraries alcotest alcotest_stdlib_ext%a)
+ (libraries alcotest alcotest.stdlib_ext%a)
  (modules
    %a
  )

@@ -58,12 +58,27 @@ module V1_types = struct
     S with type return = unit M.t
 end
 
+module Unstable_types = struct
+  module type S = sig
+    include Core.Unstable.S
+    (** @inline *)
+  end
+
+  module type MAKER = Core.Unstable.MAKER
+end
+
 module type Cli = sig
   module V1 : sig
     module type S = V1_types.S
     module type MAKER = V1_types.MAKER
 
-    module Make (P : Platform.MAKER) (M : Monad.S) :
-      V1_types.S with type return = unit M.t
+    module Make : MAKER
+  end
+
+  module Unstable : sig
+    module type S = Unstable_types.S
+    module type MAKER = Unstable_types.MAKER
+
+    module Make : MAKER
   end
 end

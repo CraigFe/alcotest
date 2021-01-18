@@ -1,6 +1,8 @@
 module Types = struct
   type bound = [ `Unlimited | `Limit of int ]
-  type filter = name:string -> index:int -> [ `Run | `Skip ]
+  type filter_v1 = name:string -> index:int -> [ `Run | `Skip ]
+  type filter_v2 = Tag.Filter.t
+  type filter = [ `V1 of filter_v1 | `V2 of filter_v2 ]
 
   type t =
     < and_exit : bool
@@ -10,7 +12,7 @@ module Types = struct
     ; quick_only : bool
     ; show_errors : bool
     ; json : bool
-    ; filter : filter option
+    ; filter : filter_v2
     ; log_dir : string
     ; bail : bool >
 
@@ -52,8 +54,9 @@ module type Config = sig
 
     (** {2 Accessors} *)
 
+    val quick_only : t -> bool
     val and_exit : t -> bool
   end
 
-  val apply_defaults : default_log_dir:string -> User.t -> t
+  val apply_defaults : default_log_dir:string Lazy.t -> User.t -> t
 end
