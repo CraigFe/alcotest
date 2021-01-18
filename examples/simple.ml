@@ -25,6 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 *)
 
+module Alcotest = Alcotest.V1
+
 (* A module with functions to test *)
 module To_test = struct
   let lowercase = String.lowercase_ascii
@@ -54,9 +56,9 @@ let test_list_concat () =
 let () =
   Alcotest.run "Utils"
     [
-      ( "string-case",
+      ( "String case",
         [
-          Alcotest.test_case "Lower case" `Quick test_lowercase;
+          Alcotest.test_case "Lower" `Quick test_lowercase;
           Alcotest.test_case "Capitalization" `Quick test_capitalize;
         ] );
       ( "string-concat",

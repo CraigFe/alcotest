@@ -1,0 +1,17 @@
+Testing `test/e2e/alcotest/passing/huge.ml'.
+This run has ID `<uuid>'.
+
+  [PASS]    alpha › 0
+  [PASS]    alpha › 1
+  [PASS]    alpha › 2
+  [PASS]    alpha › 3
+  [PASS]    alpha › 4
+  [PASS]    alpha › 5
+  [PASS]    alpha › 6
+  [PASS]    alpha › 7
+  [PASS]    alpha › 8
+  [PASS]    alpha › 9
+
+Full test results in `<build-context>/_build/_tests/<test-dir>'.
+Test Successful in <test-duration>s. 10 tests run.
+

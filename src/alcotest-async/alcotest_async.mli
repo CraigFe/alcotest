@@ -22,9 +22,8 @@ include Alcotest_engine.V1.Cli.S with type return = unit Async_kernel.Deferred.t
 val test_case :
   ?timeout:Core_kernel.Time.Span.t ->
   string ->
-  Alcotest.speed_level ->
+  speed_level ->
   ('a -> unit Async_kernel.Deferred.t) ->
   'a test_case
 
-val test_case_sync :
-  string -> Alcotest.speed_level -> ('a -> unit) -> 'a test_case
+val test_case_sync : string -> speed_level -> ('a -> unit) -> 'a test_case

@@ -25,6 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 *)
 
+module Alcotest = Alcotest.V1
+
 let e = epsilon_float
 
 let nan () =

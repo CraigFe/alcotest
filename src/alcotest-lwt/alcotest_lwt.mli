@@ -18,13 +18,27 @@
     returns a promise that runs the tests when scheduled, catching any
     asynchronous exceptions thrown by the tests. *)
 
-include Alcotest_engine.V1.Cli.S with type return = unit Lwt.t
+module V1 : sig
+  include Alcotest_engine.V1.Cli.S with type return = unit Lwt.t
 
-val test_case :
-  string ->
-  Alcotest.speed_level ->
-  (Lwt_switch.t -> 'a -> unit Lwt.t) ->
-  'a test_case
+  val test_case :
+    string -> speed_level -> (Lwt_switch.t -> 'a -> unit Lwt.t) -> 'a test_case
 
-val test_case_sync :
-  string -> Alcotest.speed_level -> ('a -> unit) -> 'a test_case
+  val test_case_sync : string -> speed_level -> ('a -> unit) -> 'a test_case
+end
+
+module Unstable : sig
+  open Alcotest_engine.Unstable
+
+  include
+    Cli.S
+      with type 'a m := 'a Lwt.t
+       and type 'a test_args := Lwt_switch.t -> 'a
+       and type config := Config.User.t
+       and type tag := Tag.t
+       and type tag_set := Tag.Set.t
+
+  val test_sync : (('a -> unit) -> 'a test) Core.identified
+end
+
+include module type of V1

@@ -11,6 +11,7 @@
    empty_test_name
    filter_name
    filter_name_regex
+   huge
    isatty
    json_output
    list_tests
@@ -34,6 +35,7 @@
    empty_test_name
    filter_name
    filter_name_regex
+   huge
    isatty
    json_output
    list_tests
@@ -254,6 +256,25 @@
  (package alcotest)
  (action
    (diff filter_name_regex.expected filter_name_regex.processed)))
+
+(rule
+ (target huge.actual)
+ (action
+  (with-outputs-to %{target}
+   (with-accepted-exit-codes (or 0 125)
+    (run %{dep:huge.exe})))))
+
+(rule
+ (target huge.processed)
+ (action
+  (with-outputs-to %{target}
+   (run ../../strip_randomness.exe %{dep:huge.actual}))))
+
+(rule
+ (alias runtest)
+ (package alcotest)
+ (action
+   (diff huge.expected huge.processed)))
 
 (rule
  (target isatty.actual)

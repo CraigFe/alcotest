@@ -26,6 +26,7 @@ For more information, please refer to <http://unlicense.org/>
 *)
 
 open Lwt.Infix
+module Alcotest_lwt = Alcotest_lwt.V1
 
 exception Library_exception
 
