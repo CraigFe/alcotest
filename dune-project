@@ -1,5 +1,4 @@
 (lang dune 2.8)
-(implicit_transitive_deps false)
 (generate_opam_files true)
 
 (name alcotest)
@@ -79,3 +78,6 @@ tests to run.
   duration
   lwt
   logs))
+
+(package
+ (name ppx_alcotest))

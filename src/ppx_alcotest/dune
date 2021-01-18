@@ -1,0 +1,8 @@
+(library
+ (name ppx_alcotest)
+ (public_name ppx_alcotest)
+ (kind ppx_rewriter)
+ (libraries ppxlib fmt)
+ (ppx_runtime_libraries ppx_alcotest.runtime)
+ (preprocess
+  (pps ppxlib.metaquot)))

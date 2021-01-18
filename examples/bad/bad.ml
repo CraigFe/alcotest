@@ -27,6 +27,8 @@ For more information, please refer to <http://unlicense.org/>
 
 (* Run with [dune exec ./examples/bad/bad.exe] *)
 
+module Alcotest = Alcotest.V1
+
 (* A module with functions to test *)
 module To_test = struct
   let capitalise = Astring.String.Ascii.uppercase

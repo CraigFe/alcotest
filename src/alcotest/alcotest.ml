@@ -1,5 +1,11 @@
+include Alcotest_engine.V1.Test
+
 module Unix_platform (M : Alcotest_engine.Monad.S) = struct
   module M = Alcotest_engine.Monad.Extend (M)
+
+  type 'a promise = 'a M.t
+
+  let name = "Unix"
 
   module Unix = struct
     open Astring
@@ -30,6 +36,7 @@ module Unix_platform (M : Alcotest_engine.Monad.S) = struct
   open M.Syntax
 
   let time = Unix.gettimeofday
+  let mkdir_p path = Unix.mkdir_p path 0o770
   let getcwd = Sys.getcwd
 
   let unlink_if_exists file =
@@ -123,12 +130,37 @@ module Unix_platform (M : Alcotest_engine.Monad.S) = struct
 end
 
 module V1 = struct
-  include Alcotest_engine.V1.Test
-
   module T =
     Alcotest_engine.V1.Cli.Make (Unix_platform) (Alcotest_engine.Monad.Identity)
 
   include T
+  include Alcotest_engine.V1.Test
+end
+
+module Unstable = struct
+  open Alcotest_engine.Unstable
+  module Source_code_position = Source_code_position
+  module Tag = Tag
+
+  module Config = struct
+    include Config.User
+
+    let v ?and_exit ?verbose ?compact ?tail_errors ?quick_only ?show_errors
+        ?json ?filter ?bail ?log_dir () =
+      create
+        ?filter:(Option.map (fun f -> `V2 f) filter)
+        ?and_exit ?verbose ?compact ?tail_errors ?quick_only ?show_errors ?json
+        ?bail ?log_dir ()
+
+    let merge = ( || )
+  end
+
+  module T = Cli.Make (Unix_platform) (Alcotest_engine.Monad.Identity)
+  include T
+
+  module type Suite = sig
+    val _ppx_alcotest_suite : unit test list
+  end
 end
 
 include V1

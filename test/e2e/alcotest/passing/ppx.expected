@@ -1,0 +1,12 @@
+
+Testing `test/e2e/alcotest/passing/ppx.ml'.
+This run has ID `<uuid>'.
+
+  [PASS]    Lorem › ipsum
+  [PASS]    Lorem › dolor
+  [PASS]    Sit › Amet › consectetur
+  [PASS]    Sit › adipiscing
+
+Full test results in `<build-context>/_build/_tests/<test-dir>'.
+Test Successful in <test-duration>s. 4 tests run.
+

@@ -4,6 +4,7 @@
    fail_with
  )
  (libraries alcotest alcotest_stdlib_ext alcotest-lwt lwt lwt.unix)
+ (preprocess (pps ppx_alcotest))
  (modules
    async_failure
    fail_with

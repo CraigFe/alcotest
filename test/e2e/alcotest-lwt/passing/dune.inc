@@ -3,6 +3,7 @@
    cli_options
  )
  (libraries alcotest alcotest_stdlib_ext alcotest-lwt lwt lwt.unix)
+ (preprocess (pps ppx_alcotest))
  (modules
    cli_options
  )

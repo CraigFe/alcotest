@@ -11,10 +11,12 @@
    empty_test_name
    filter_name
    filter_name_regex
+   huge
    isatty
    json_output
    list_tests
    only_monadic_effects
+   ppx
    quick_only
    quick_only_regex
    separator_testname
@@ -22,6 +24,7 @@
    verbose_newlines
  )
  (libraries alcotest alcotest_stdlib_ext alcotest.engine)
+ (preprocess (pps ppx_alcotest))
  (modules
    and_exit_false
    and_exit_true
@@ -34,10 +37,12 @@
    empty_test_name
    filter_name
    filter_name_regex
+   huge
    isatty
    json_output
    list_tests
    only_monadic_effects
+   ppx
    quick_only
    quick_only_regex
    separator_testname
@@ -256,6 +261,25 @@
    (diff filter_name_regex.expected filter_name_regex.processed)))
 
 (rule
+ (target huge.actual)
+ (action
+  (with-outputs-to %{target}
+   (with-accepted-exit-codes (or 0 125)
+    (run %{dep:huge.exe})))))
+
+(rule
+ (target huge.processed)
+ (action
+  (with-outputs-to %{target}
+   (run ../../strip_randomness.exe %{dep:huge.actual}))))
+
+(rule
+ (alias runtest)
+ (package alcotest)
+ (action
+   (diff huge.expected huge.processed)))
+
+(rule
  (target isatty.actual)
  (action
   (with-outputs-to %{target}
@@ -330,6 +354,25 @@
  (package alcotest)
  (action
    (diff only_monadic_effects.expected only_monadic_effects.processed)))
+
+(rule
+ (target ppx.actual)
+ (action
+  (with-outputs-to %{target}
+   (with-accepted-exit-codes (or 0 125)
+    (run %{dep:ppx.exe})))))
+
+(rule
+ (target ppx.processed)
+ (action
+  (with-outputs-to %{target}
+   (run ../../strip_randomness.exe %{dep:ppx.actual}))))
+
+(rule
+ (alias runtest)
+ (package alcotest)
+ (action
+   (diff ppx.expected ppx.processed)))
 
 (rule
  (target quick_only.actual)

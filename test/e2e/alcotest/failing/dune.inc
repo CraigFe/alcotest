@@ -17,6 +17,7 @@
    unknown_option
  )
  (libraries alcotest alcotest_stdlib_ext alcotest.engine)
+ (preprocess (pps ppx_alcotest))
  (modules
    bail
    check_basic

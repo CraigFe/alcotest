@@ -1,162 +1,193 @@
 open! Import
 
-type speed_level = [ `Quick | `Slow ]
-
-(** Given a UTF-8 encoded string, escape any characters not considered
-    "filesystem safe" as their [U+XXXX] notation form (or using [-]). *)
-let escape str =
-  let add_codepoint buf uchar =
-    Uchar.to_int uchar |> Fmt.str "U+%04X" |> Buffer.add_string buf
-  in
-  let buf = Buffer.create (String.length str * 2) in
-  let get_normalized_char _ _ u =
-    match u with
-    | `Uchar u ->
-        if Uchar.is_char u then
-          match Uchar.to_char u with
-          | ('A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '-' | ' ' | '.') as c
-            ->
-              Buffer.add_char buf c
-          | '/' | '\\' -> Buffer.add_char buf '-'
-          | _ -> add_codepoint buf u
-        else add_codepoint buf u
-    | `Malformed _ -> Uutf.Buffer.add_utf_8 buf Uutf.u_rep
-  in
-  Uutf.String.fold_utf_8 get_normalized_char () str;
-  Buffer.contents buf
-
-module Test_name : sig
-  type t
-
-  val v : name:string -> index:int -> t
-  val name : t -> string
-  val index : t -> int
-
-  val pp : t Fmt.t
-  (** Pretty-print the unescaped test-case name *)
-
-  val file : t -> string
-  (** An escaped form of the test name with [.output] suffix. *)
-
-  val length : t -> int
-  (** The approximate number of terminal columns consumed by [pp_name]. *)
-
-  val compare : t -> t -> int
-  (** Order lexicographically by name, then by index. *)
-end = struct
-  type t = { name : string; file : string; index : int }
-
-  let index { index; _ } = index
-
-  let v ~name ~index =
-    let file =
-      let name = name |> escape |> function "" -> "" | n -> n ^ "." in
-      Fmt.str "%s%03d.output" name index
-    in
-    { name; file; index }
-
-  let pp = Fmt.using (fun { name; _ } -> name) Fmt.string
-  let name { name; _ } = name
-  let file { file; _ } = file
-  let length = name >> Uutf.String.fold_utf_8 (fun a _ _ -> a + 1) 0
-
-  let compare t t' =
-    match String.compare t.name t'.name with
-    | 0 -> (compare : int -> int -> int) t.index t'.index
-    | n -> n
-end
-
 module Run_result = struct
-  type t =
-    [ `Ok
-    | `Exn of Test_name.t * string * unit Fmt.t
-    | `Error of Test_name.t * unit Fmt.t
-    | `Skip
-    | `Todo of string ]
+  type index = Safe_string.t list * Safe_string.t
 
-  (** [is_failure] holds for test results that are error states. *)
-  let is_failure : t -> bool = function
-    | `Ok | `Skip -> false
-    | `Error _ | `Exn _ | `Todo _ -> true
+  type t =
+    | Ok
+    | Exn of index * string * unit Fmt.t
+    | Error of index * unit Fmt.t
+    | Skip
+    | Todo of string
+
+  let is_failure = function
+    | Ok | Skip -> false
+    | Error _ | Exn _ | Todo _ -> true
+
+  let has_run = function Ok | Error _ | Exn _ -> true | Skip | Todo _ -> false
 end
 
-module Suite (M : Monad.S) : sig
-  type 'a t
-  type 'a test_fn = [ `Skip | `Run of 'a -> Run_result.t M.t ]
-
-  type 'a test_case = {
-    name : Test_name.t;
-    speed_level : speed_level;
-    fn : 'a test_fn;
-  }
-
-  val v : name:string -> (_ t, [> `Empty_name ]) result
-  (** Construct a new suite, given a non-empty [name]. Test cases must be added
-      with {!add}. *)
-
-  val name : _ t -> string
-  (** An escaped form of the suite name. *)
-
-  val pp_name : _ t Fmt.t
-  (** Pretty-print the unescaped suite name. *)
-
-  val add :
-    'a t ->
-    Test_name.t * string * speed_level * 'a test_fn ->
-    ('a t, [ `Duplicate_test_path of string ]) result
-
-  val tests : 'a t -> 'a test_case list
-  val doc_of_test_name : 'a t -> Test_name.t -> string
-end = struct
+module Suite (M : Monad.S) = struct
   module String_set = Set.Make (String)
+  module M = Monad.Extend (M)
+  open M.Syntax
 
-  type 'a test_fn = [ `Skip | `Run of 'a -> Run_result.t M.t ]
+  type 'a test =
+    | Test of {
+        name : Safe_string.t;
+        loc : Lexing.position option;
+        tags : Tag.Set.t;
+        fn : 'a -> unit M.t;
+      }
+    | Group of {
+        name : Safe_string.t;
+        loc : Lexing.position option;
+        tags : Tag.Set.t;
+        children : 'a test list;
+      }
 
-  type 'a test_case = {
-    name : Test_name.t;
-    speed_level : speed_level;
-    fn : 'a test_fn;
-  }
+  let test ~name ~loc ~tags fn =
+    let name = Safe_string.v name in
+    Test { name; loc; tags; fn }
+
+  let group ~name ~loc ~tags children =
+    let name = Safe_string.v name in
+    Group { name; loc; tags; children }
 
   type 'a t = {
-    escaped_name : string;
-    pp_name : unit Fmt.t;
-    tests : 'a test_case list;
-    (* caches computed from the library values. *)
-    filepaths : String_set.t;
-    doc : (Test_name.t, string) Hashtbl.t;
+    name : Safe_string.t;
+    loc : Lexing.position option;
+    tests : 'a test list;
   }
 
-  let v ~name =
-    match String.length name with
-    | 0 -> Error `Empty_name
-    | _ ->
-        let escaped_name = escape name in
-        let pp_name = Fmt.(const string) name in
-        let tests = [] in
-        let filepaths = String_set.empty in
-        let doc = Hashtbl.create 0 in
-        Ok { escaped_name; pp_name; tests; filepaths; doc }
+  let validate_tests =
+    let rec aux ctx ts =
+      let open Result.Syntax in
+      let* () =
+        let duplicate =
+          ts
+          |> List.map (function
+               | Test { name; _ } -> name
+               | Group { name; _ } -> name)
+          |> List.find_duplicate ~compare:Safe_string.compare
+        in
+        match duplicate with
+        | None -> Ok ()
+        | Some dup ->
+            let path =
+              List.rev_map Safe_string.to_string (dup :: ctx)
+              |> String.concat ~sep:" › "
+            in
+            Error (`Duplicate_path path)
+      in
+      List.fold_result ts ~init:() ~f:(fun () -> function
+        | Test _ -> Ok ()
+        | Group { name; children; _ } -> aux (name :: ctx) children)
+    in
+    fun ts -> aux [] ts
 
-  let name { escaped_name; _ } = escaped_name
-  let pp_name ppf { pp_name; _ } = pp_name ppf ()
+  let of_tests ~name ~loc tests =
+    let open Result.Syntax in
+    let* () = validate_tests tests in
+    if String.is_empty name then Error `Empty_name
+    else
+      let name = Safe_string.v name in
+      Ok { name; loc; tests }
 
-  let check_path_is_unique t tname =
-    match String_set.mem (Test_name.file tname) t.filepaths with
-    | false -> Ok ()
-    | true -> Error (`Duplicate_test_path (Fmt.to_to_string Test_name.pp tname))
+  let rec list_fold_until ~f ~init:acc ~finish = function
+    | [] -> M.return (finish acc)
+    | [ x ] -> (
+        f ~last:true acc x >|= function Stop c -> c | Continue c -> finish c)
+    | x :: (_ :: _ as xs) -> (
+        f ~last:false acc x >>= function
+        | Stop c -> M.return c
+        | Continue acc -> list_fold_until ~f ~init:acc ~finish xs)
 
-  let add t (tname, doc, speed_level, fn) =
-    match check_path_is_unique t tname with
-    | Error _ as e -> e
-    | Ok () ->
-        let tests = { name = tname; speed_level; fn } :: t.tests in
-        let filepaths = String_set.add (Test_name.file tname) t.filepaths in
-        Hashtbl.add t.doc tname doc;
-        Ok { t with tests; filepaths }
+  let foldi_until ~filter ?group ?test ~init:acc ~finish t =
+    let fold_default _ acc _ = M.return (Continue acc) in
+    let group = Option.value group ~default:fold_default
+    and test = Option.value test ~default:fold_default in
+    let rec aux ~last ~path acc elt =
+      match elt with
+      | Test t ->
+          let ctx =
+            object
+              method last = last
+              method path = path
+              method name = t.name
+            end
+          in
+          let arg =
+            match filter t.tags with `Run -> `Run t.fn | `Skip -> `Skip
+          in
+          test ctx acc arg
+      | Group g -> (
+          let arg = filter g.tags in
+          let ctx =
+            object
+              method last = last
+              method path = path
+              method name = g.name
+            end
+          in
+          M.bind (group ctx acc arg) @@ function
+          | Stop _ as x -> M.return x
+          | Continue acc -> (
+              match arg with
+              | `Skip -> M.return (Continue acc)
+              | `Run ->
+                  let path = path @ [ g.name ] in
+                  list_fold_until g.children ~init:acc
+                    ~f:(fun ~last acc child ->
+                      aux ~last ~path acc child >|= function
+                      | Continue _ as c -> c
+                      | Stop _ as s -> Stop s)
+                    ~finish:(fun x -> Continue x)))
+    in
+    list_fold_until t.tests ~init:acc ~finish ~f:(aux ~path:[])
 
-  let tests t = List.rev t.tests
+  let fold ~filter ~group ~test ~init t =
+    foldi_until t ~filter ~init
+      ~finish:(fun x -> x)
+      ~group:(fun _ a x -> M.return (Continue (group a x)))
+      ~test:(fun _ a x -> M.return (Continue (test a x)))
 
-  let doc_of_test_name t path =
-    try Hashtbl.find t.doc path with Not_found -> ""
+  let name { name; _ } = Safe_string.to_string name
+  let pp_name ppf { name; _ } = Safe_string.pp ppf name
+
+  let rec pp_files ~pre ~last_dir ppf files =
+    let open Fmt in
+    (* Only print newline at the end if our ancestors have not already done so
+       (i.e. we are not the descendant of a last directory *)
+    let pp_last_dir ppf last_dir = if not last_dir then pf ppf "@,%s" pre in
+    let pp_children_last ppf =
+      pf ppf "%s└─ %a" pre (pp_file ~last_dir:true ~pre:(pre ^ "   "))
+    and pp_children_not_last ppf =
+      pf ppf "%s├─ %a" pre (pp_file ~last_dir:false ~pre:(pre ^ "│  "))
+    in
+    match files with
+    | [] -> ()
+    | [ last ] -> pf ppf "@,%a%a" pp_children_last last pp_last_dir last_dir
+    | _ :: _ :: _ ->
+        let last, not_last =
+          match List.rev files with
+          | [] -> assert false
+          | last :: not_last_rev -> (last, List.rev not_last_rev)
+        in
+        pf ppf "@,%a@,%a%a"
+          (list ~sep:cut pp_children_not_last)
+          not_last pp_children_last last pp_last_dir last_dir
+
+  and pp_file ~pre ~last_dir ppf =
+    let open Fmt in
+    let pp_group_name = styled `Bold (styled `Blue Safe_string.pp) in
+    function
+    | Test { name; tags; _ } ->
+        Fmt.pf ppf "%a  %a" Safe_string.pp name Fmt.(styled `Faint pp_tags) tags
+    | Group { name; children; _ } ->
+        pp_group_name ppf name;
+        pp_files ~pre ~last_dir ppf children
+
+  and pp_tags ppf ts =
+    let open Fmt in
+    string ppf "< ";
+    list ~sep:(const string "; ") Tag.pp ppf (Tag.Set.to_list ts);
+    Fmt.string ppf " >"
+
+  let pp_file ppf t = pp_file ~pre:"" ~last_dir:false ppf t
+
+  let pp ppf t =
+    pp_file ppf
+      (Group
+         { name = t.name; loc = None; tags = Tag.Set.empty; children = t.tests })
 end

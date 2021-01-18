@@ -1,0 +1,2 @@
+File "bad_test_payload.ml", line 1, characters 9-10:
+Error: Unsupported test name type. Use a literal string or an integer.

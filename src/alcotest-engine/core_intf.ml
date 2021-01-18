@@ -45,7 +45,7 @@ module V1_types = struct
     (** A test is a UTF-8 encoded name and a list of test cases. The name can be
         used for filtering which tests to run on the CLI. *)
 
-    val list_tests : 'a test list -> return
+    val list_tests : string -> 'a test list -> return
     (** Print all of the test cases in a human-readable form *)
 
     type 'a with_options =
@@ -92,8 +92,80 @@ module V1_types = struct
   end
 end
 
-module type Core = sig
+module Types = struct
   exception Check_error of unit Fmt.t
+
+  (* TODO(4.08): replace with local type substitution *)
+  type 'a identified =
+    ?here:Lexing.position -> ?tag:Tag.t -> ?tags:Tag.Set.t -> name:string -> 'a
+  (** A test suite is a tree of named test cases, with named internal nodes.
+      This type defines the metadata associated with each node in the tree: *)
+end
+
+module Unstable_types = struct
+  module type S = sig
+    (* These types are intended to be destructively-substituted by various
+       backends. *)
+
+    type 'a m
+    type 'a test_args
+    type tag
+    type tag_set
+    type config
+
+    type 'a test
+    (** The type of unit tests. *)
+
+    type 'a extra_info :=
+      ?here:Source_code_position.here -> ?tag:tag -> ?tags:tag_set -> 'a
+    (** Tests and test groups can be located by attaching source code positions
+        to them. *)
+
+    val test : (name:string -> ('a -> unit m) test_args -> 'a test) extra_info
+    (** [test ~name f] is a suite containing a single named test that runs [f].*)
+
+    val group : (name:string -> 'a test list -> 'a test) extra_info
+    (** [test_group ~name ts] *)
+
+    val run :
+      ?here:Source_code_position.here ->
+      ?config:config ->
+      name:string ->
+      unit test list ->
+      unit m
+
+    val run_with_args :
+      ?here:Source_code_position.here ->
+      ?config:config ->
+      name:string ->
+      'a ->
+      'a test list ->
+      unit m
+  end
+
+  (** Extensions to {!S} for use by backends. *)
+  module type EXT = sig
+    include S
+
+    val list_tests :
+      ?here:Source_code_position.here ->
+      ?config:config ->
+      name:string ->
+      _ test list ->
+      unit m
+  end
+
+  module type MAKER = functor (P : Platform.MAKER) (M : Monad.S) ->
+    EXT
+      with type 'a m := 'a M.t
+       and type 'a test_args := 'a
+       and type config := Config.User.t
+       and type tag := Tag.t
+       and type tag_set := Tag.Set.t
+end
+
+module type Core = sig
+  include module type of Types
 
   module V1 : sig
     module type S = V1_types.S
@@ -104,5 +176,14 @@ module type Core = sig
         [('a -> unit M.t)] within a given concurrency monad [M.t]. The [run] and
         [run_with_args] functions must be scheduled in a global event loop.
         Intended for use by the {!Alcotest_lwt} and {!Alcotest_async} backends. *)
+  end
+
+  module Unstable : sig
+    type nonrec 'a identified = 'a identified
+
+    module type S = Unstable_types.S
+    module type MAKER = Unstable_types.MAKER
+
+    module Make : MAKER
   end
 end

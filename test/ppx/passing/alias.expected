@@ -1,0 +1,15 @@
+let _ =
+  { Lexing.pos_fname = "alias.ml"; pos_lnum = 1; pos_cnum = 8; pos_bol = 0 }
+let _ =
+  fun ?(here=
+    {
+      Lexing.pos_fname = "alias.ml";
+      pos_lnum = 2;
+      pos_cnum = 24;
+      pos_bol = 16
+    }) ->
+    fun ?msg ->
+      fun ~expected ->
+        fun actual ->
+          Ppx_alcotest_runtime.check ~here
+            ~testable:(Alcotest.list Alcotest.int) ?msg ~expected actual
