@@ -1,0 +1,3 @@
+module-item-spacing = compact
+# break-separators = before
+# dock-collection-brackets = false

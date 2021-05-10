@@ -44,6 +44,7 @@ let global_stanza ~libraries filenames =
    %a
  )
  (libraries alcotest alcotest_stdlib_ext%a)
+ (preprocess (pps ppx_alcotest))
  (modules
    %a
  )
@@ -101,7 +102,9 @@ let example_alias_stanza ~package filename =
 |}
     package base base
 
-let is_example filename = Filename.check_suffix filename ".ml"
+let is_example filename =
+  Filename.check_suffix filename ".ml"
+  && not (Filename.check_suffix filename ".pp.ml")
 
 let main package expect_failure libraries =
   Sys.readdir "."

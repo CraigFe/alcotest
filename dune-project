@@ -78,3 +78,6 @@ tests to run.
   duration
   lwt
   logs))
+
+(package
+ (name ppx_alcotest))

@@ -157,6 +157,10 @@ module Unstable = struct
 
   module T = Cli.Make (Unix_platform) (Alcotest_engine.Monad.Identity)
   include T
+
+  module type Suite = sig
+    val _ppx_alcotest_suite : unit test list
+  end
 end
 
 include V1

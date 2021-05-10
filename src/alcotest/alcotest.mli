@@ -118,6 +118,10 @@ module Unstable : sig
        and type tag := Tag.t
        and type tag_set := Tag.Set.t
        and type config := Config.t
+
+  module type Suite = sig
+    val _ppx_alcotest_suite : unit test list
+  end
 end
 
 (** {1 Unix-specific engine constructors}
