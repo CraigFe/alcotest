@@ -31,16 +31,6 @@ module Set : sig
 end
 with type tag := t
 
-module Filter : sig
-  type t = Set.t -> [ `Run | `Skip ]
-
-  val ( ++ ) : t -> t -> t
-  (** [f ++ g] is the filter that runs only tests that are run by both [f]
-      {i and} [g]. *)
-
-  val default : t
-end
-
 module Speed_level : sig
   type tag
   type t = [ `Quick | `Slow ]
@@ -48,7 +38,6 @@ module Speed_level : sig
   val tag : t Key.t
   val quick : tag
   val slow : tag
-  val without_slow : Filter.t
 end
 with type tag := t
 
@@ -60,5 +49,4 @@ module Predicate : sig
   type t = unit -> [ `Run | `Skip ]
 
   val tag : t Key.t
-  val only_if : Filter.t
 end

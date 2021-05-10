@@ -2,9 +2,9 @@ Testing `test/e2e/alcotest/passing/quick_only.ml'.
 This run has ID `<uuid>'.
 
   [PASS]    test-a › Quick
-  [PASS]    test-a › Slow
-  [PASS]    test-b › Slow
+  [SKIP]    test-a › Slow
+  [SKIP]    test-b › Slow
   [PASS]    test-b › Quick
 
 Full test results in `<build-context>/_build/_tests/<test-dir>'.
-Test Successful in <test-duration>s. 4 tests run.
+Test Successful in <test-duration>s. 2 tests run.

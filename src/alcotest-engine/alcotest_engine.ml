@@ -10,6 +10,7 @@ module Unstable = struct
   module Cli = Cli.Unstable
   module Config = Config
   module Core = Core.Unstable
+  module Filter = Filter
   module Source_code_position = Source_code_position
   module Tag = Tag
   module Test = Test

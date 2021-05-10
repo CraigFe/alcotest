@@ -198,13 +198,10 @@ module Make (P : Platform.MAKER) (M : Monad.S) = struct
     let+ (result : Run_result.t) = with_captured_logs t index test args in
     (* Store errors *)
     let errored : bool =
-      let error, errored =
-        if Run_result.is_failure result then
-          ([ Fmt.const (pp_error t) result ], true)
-        else ([], false)
-      in
-      t.errors <- error @ t.errors;
-      errored
+      if Run_result.is_failure result then (
+        t.errors <- Fmt.const (pp_error t) result :: t.errors;
+        true)
+      else false
     in
     (* Show any remaining test output before the event *)
     Fmt.(flush stdout ());
@@ -238,7 +235,8 @@ module Make (P : Platform.MAKER) (M : Monad.S) = struct
       ();
     let start_time = P.time () in
     let+ results =
-      Suite.foldi_until t.suite ~filter:t.config#filter
+      Suite.foldi_until t.suite
+        ~filter:(Filter.apply t.config#filter t.config)
         ~init:{ tests_so_far = 0; first_error = None; failures = 0 }
         ~finish:(fun x -> x)
         ~group:(fun _ctx acc _ ->
@@ -286,7 +284,9 @@ module Make (P : Platform.MAKER) (M : Monad.S) = struct
     let config = Config.apply_defaults ~default_log_dir config in
     let suite = Suite.of_tests_exn ~name ~loc:here tests in
     let* at_least_one_test =
-      Suite.foldi_until suite ~filter:config#filter ~init:()
+      Suite.foldi_until suite
+        ~filter:(Filter.apply config#filter config)
+        ~init:()
         ~finish:(fun () -> false)
         ~test:
           (fun _ () -> function

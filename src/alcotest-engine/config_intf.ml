@@ -1,10 +1,14 @@
 module Types = struct
   type bound = [ `Unlimited | `Limit of int ]
-  type filter_v1 = name:string -> index:int -> [ `Run | `Skip ]
-  type filter_v2 = Tag.Filter.t
-  type filter = [ `V1 of filter_v1 | `V2 of filter_v2 ]
+  type filter_result = [ `Run | `Skip ]
 
-  type t =
+  type filter_v1 = name:string -> index:int -> filter_result
+
+  and filter_v2 = t -> Tag.Set.t -> filter_result
+
+  and filter = [ `V1 of filter_v1 | `V2 of filter_v2 ]
+
+  and t =
     < and_exit : bool
     ; verbose : bool
     ; compact : bool

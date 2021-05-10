@@ -31,6 +31,8 @@ end
 
 module Suite (M : Monad.S) : sig
   type 'a test
+  type filter_result := [ `Run | `Skip ]
+  type filter := Tag.Set.t -> filter_result
 
   val test :
     name:string ->
@@ -49,12 +51,9 @@ module Suite (M : Monad.S) : sig
   type 'a t
 
   val foldi_until :
-    filter:Tag.Filter.t ->
+    filter:filter ->
     ?group:
-      (Index.t ->
-      'acc ->
-      [ `Run | `Skip ] ->
-      ('acc, 'final) continue_or_stop M.t) ->
+      (Index.t -> 'acc -> filter_result -> ('acc, 'final) continue_or_stop M.t) ->
     ?test:
       (Index.t ->
       'acc ->
@@ -68,8 +67,8 @@ module Suite (M : Monad.S) : sig
       [filter] predicate defined over node {!Tag}s. *)
 
   val fold :
-    filter:Tag.Filter.t ->
-    group:('acc -> [ `Run | `Skip ] -> 'acc) ->
+    filter:filter ->
+    group:('acc -> filter_result -> 'acc) ->
     test:('acc -> [ `Run of 'a -> unit M.t | `Skip ] -> 'acc) ->
     init:'acc ->
     'a t ->

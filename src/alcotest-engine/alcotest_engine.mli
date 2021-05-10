@@ -52,6 +52,7 @@ module Unstable : sig
   module Core = Core.Unstable
   module Cli = Cli.Unstable
   module Tag = Tag
+  module Filter = Filter
   module Config = Config
   module Source_code_position = Source_code_position
 end

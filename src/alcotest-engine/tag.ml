@@ -97,9 +97,6 @@ module Speed_level = struct
 
   let quick = V (tag, `Quick)
   let slow = V (tag, `Slow)
-
-  let without_slow s =
-    match Set.find tag s with Some `Slow -> `Skip | _ -> `Run
 end
 
 module Predicate = struct
@@ -108,17 +105,8 @@ module Predicate = struct
   let tag =
     Key.create ~name:"Predicate" ~pp_data:(fun ppf _ ->
         Fmt.pf ppf "Predicate <...>")
-
-  let only_if s = match Set.find tag s with Some p -> p () | None -> `Run
 end
 
 module Position = struct
   let tag = Key.create ~name:"index" ~pp_data:Fmt.(using snd int)
-end
-
-module Filter = struct
-  type t = Set.t -> [ `Run | `Skip ]
-
-  let ( ++ ) f g x = match (f x, g x) with `Run, `Run -> `Run | _, _ -> `Skip
-  let default = Predicate.only_if (* TODO: be sensitive to `quick_only` *)
 end
