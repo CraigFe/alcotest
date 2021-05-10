@@ -8,7 +8,7 @@ let test_lwt switch () =
   Lwt_unix.sleep 10.
 
 let () =
-  let open Alcotest_lwt in
+  let open Alcotest_lwt.V1 in
   Lwt_main.run
   @@ run __FILE__
        [

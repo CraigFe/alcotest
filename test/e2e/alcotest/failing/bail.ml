@@ -1,3 +1,5 @@
+module Alcotest = Alcotest.V1
+
 let () =
   let tc name f = Alcotest.test_case name `Quick f in
   Alcotest.run ~bail:true __FILE__

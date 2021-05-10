@@ -2,6 +2,8 @@
     logs due to Format buffers not being flushed. See
     https://github.com/mirage/alcotest/pull/228 for details. *)
 
+module Alcotest = Alcotest.V1
+
 let () =
   let open Alcotest in
   let s tc = tc ^ ": SHOULD NOT BE PRINTED" in

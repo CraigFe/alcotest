@@ -1,5 +1,7 @@
 (** Ensure that suites with duplicate test names are rejected. *)
 
+module Alcotest = Alcotest.V1
+
 let () =
   Alcotest.run __FILE__
     [

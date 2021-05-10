@@ -1,3 +1,5 @@
+module Alcotest_lwt = Alcotest_lwt.V1
+
 let () =
   let open Alcotest_lwt in
   Lwt_main.run

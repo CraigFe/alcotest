@@ -1,3 +1,5 @@
+module Alcotest = Alcotest.V1
+
 let () =
   Alcotest.run
     "Suite name containing file separators / and non-ASCII characters 🔥"

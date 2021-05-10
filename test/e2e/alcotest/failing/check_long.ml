@@ -1,4 +1,5 @@
 open Alcotest_stdlib_ext
+module Alcotest = Alcotest.V1
 
 (** These tests check the wrapping behaviour of [Alcotest.check]'s emitted diff. *)
 

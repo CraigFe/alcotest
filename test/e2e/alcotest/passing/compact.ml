@@ -1,4 +1,5 @@
 open Alcotest_stdlib_ext
+module Alcotest = Alcotest.V1
 
 let () =
   let open Alcotest in

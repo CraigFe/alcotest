@@ -1,3 +1,5 @@
+module Alcotest = Alcotest.V1
+
 exception Foo of string
 
 let () =

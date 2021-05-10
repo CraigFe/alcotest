@@ -1,3 +1,5 @@
+module Alcotest = Alcotest.V1
+
 let () =
   let open Alcotest in
   let failtest () = invalid_arg "This test should never be run" in

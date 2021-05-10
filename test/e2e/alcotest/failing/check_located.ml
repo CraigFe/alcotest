@@ -3,6 +3,8 @@ let here : Lexing.position =
 
 let pos = __POS__
 
+module Alcotest = Alcotest.V1
+
 let () =
   let open Alcotest in
   let msg = "Expected failure" in

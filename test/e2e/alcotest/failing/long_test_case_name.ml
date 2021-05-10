@@ -1,3 +1,5 @@
+module Alcotest = Alcotest.V1
+
 let () =
   let open Alcotest in
   run __FILE__

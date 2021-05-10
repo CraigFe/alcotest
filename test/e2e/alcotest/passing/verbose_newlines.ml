@@ -1,6 +1,8 @@
 (** Reproduction for https://github.com/mirage/alcotest/issues/225, testing the
     interaction between `--verbose` and newlines in the test stdout. *)
 
+module Alcotest = Alcotest.V1
+
 let () =
   Alcotest.run ~verbose:true __FILE__
     [

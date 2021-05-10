@@ -1,5 +1,7 @@
 (** Test the interaction between ASSERT prints and the `--verbose` option. *)
 
+module Alcotest = Alcotest.V1
+
 let () =
   let open Alcotest in
   run ~verbose:true "assert-and-verbose"

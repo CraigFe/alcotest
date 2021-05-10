@@ -1,5 +1,7 @@
 (** Ensures that the `--verbose` flag is passed from the CLI. *)
 
+module Alcotest = Alcotest.V1
+
 let () =
   let open Alcotest in
   run ~verbose:false (* CLI flag should take priority over this option *)

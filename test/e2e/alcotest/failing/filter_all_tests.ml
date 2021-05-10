@@ -1,5 +1,7 @@
 (** Ensure that filters which eliminate all tests are rejected. *)
 
+module Alcotest = Alcotest.V1
+
 let () =
   Alcotest.run __FILE__
     [

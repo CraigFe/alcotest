@@ -1,3 +1,5 @@
+module Alcotest = Alcotest.V1
+
 let test_error_output () =
   for i = 1 to 100 do
     Printf.printf "output line %i\n" i
