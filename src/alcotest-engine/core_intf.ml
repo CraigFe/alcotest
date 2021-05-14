@@ -118,7 +118,7 @@ module Unstable_types = struct
     type 'a test
     (** The type of unit tests. *)
 
-    type 'a extra_info := ?here:Source_code_position.here -> ?tags:tag_set -> 'a
+    type 'a extra_info = ?here:Source_code_position.here -> ?tags:tag_set -> 'a
     (** Tests and test groups can be located by attaching source code positions
         to them. *)
 

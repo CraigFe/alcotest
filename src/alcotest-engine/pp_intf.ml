@@ -100,7 +100,7 @@ module type Pp = sig
   val user_error : ('a, Format.formatter, unit, _) format4 -> 'a
   (** Raise a user error, then fail. *)
 
-  module Width_sensitive (_ : sig
+  module Width_sensitive (X : sig
     val stdout_columns : unit -> int option
   end) : Width_sensitive with type event := event and type result := result
 end

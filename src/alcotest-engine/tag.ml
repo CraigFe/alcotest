@@ -69,22 +69,21 @@ module Set = struct
     try
       let (V (k', v)) = Map.find (V k) t in
       match Type_id.equal k.type_id k'.type_id with
-      | Some Refl -> Some v
+      | Some Type_id.Refl -> Some v
       | None -> assert false
     with Not_found -> None
 
-  let to_list = Map.to_seq >> List.of_seq >> List.map snd
+  let to_list = Map.bindings >> List.map snd
 
   let fold_until =
-    let rec aux ~f ~finish acc seq =
-      match seq () with
-      | Seq.Cons ((_k, v), xf) -> (
+    let rec aux ~f ~finish acc = function
+      | [] -> finish acc
+      | (_k, v) :: xs -> (
           match f acc v with
-          | Continue acc -> aux ~f ~finish acc xf
+          | Continue acc -> aux ~f ~finish acc xs
           | Stop final -> final)
-      | Seq.Nil -> finish acc
     in
-    fun t ~init ~f ~finish -> aux ~f ~finish init (Map.to_seq t)
+    fun t ~init ~f ~finish -> aux ~f ~finish init (Map.bindings t)
 end
 
 module Speed_level = struct

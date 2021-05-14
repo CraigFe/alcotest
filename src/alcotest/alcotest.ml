@@ -1,3 +1,4 @@
+open! Alcotest_stdlib_ext
 include Alcotest_engine.V1.Test
 
 module Unix_platform (M : Alcotest_engine.Monad.S) = struct

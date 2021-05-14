@@ -31,8 +31,8 @@ end
 
 module Suite (M : Monad.S) : sig
   type 'a test
-  type filter_result := [ `Run | `Skip ]
-  type filter := Tag.Set.t -> filter_result
+  type filter_result = [ `Run | `Skip ]
+  type filter = Tag.Set.t -> filter_result
 
   val test :
     name:string ->

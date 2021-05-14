@@ -107,6 +107,7 @@ module Make (P : Platform.MAKER) (M : Monad.S) = struct
     { suite; errors = []; loc; config; run_id; log_trap; progress_reporter }
 
   type 'a test = 'a Suite.test
+  type 'a extra_info = ?here:Source_code_position.here -> ?tags:Tag.Set.t -> 'a
 
   let bt () = match Printexc.get_backtrace () with "" -> "" | s -> "\n" ^ s
 

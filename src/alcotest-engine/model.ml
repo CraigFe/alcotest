@@ -50,6 +50,9 @@ module Suite (M : Monad.S) = struct
   module M = Monad.Extend (M)
   open M.Syntax
 
+  type filter_result = [ `Run | `Skip ]
+  type filter = Tag.Set.t -> filter_result
+
   type 'a test =
     | Test of {
         name : Safe_string.t;
